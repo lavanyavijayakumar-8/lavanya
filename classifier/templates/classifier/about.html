@@ -1,0 +1,131 @@
+{% extends 'classifier/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+    <div style="margin-bottom: 2.5rem; text-align: center;">
+        <div class="hero-pill">
+            <span class="pulse-dot"></span>
+            <span>Comprehensive Project Documentation</span>
+        </div>
+        <h1 style="font-size: 2.6rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.8rem;">
+            Deep Learning Based Multi-Category<br>
+            <span class="gradient-text">Image Classification System</span>
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 1.05rem; line-height: 1.6;">
+            A unified Artificial Intelligence framework combining Convolutional Neural Networks (CNN) with a Django web application to automate image categorization across 5 diverse domains.
+        </p>
+    </div>
+
+    <!-- Section 1: Introduction -->
+    <div class="glass-card" style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.45rem; font-weight: 800; color: #a5b4fc; margin-bottom: 0.85rem;">
+            1. Project Introduction
+        </h2>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; margin-bottom: 1rem;">
+            Deep Learning Based Multi-Category Image Classification is a web-based application designed to automatically identify and classify images into different categories using Artificial Intelligence (AI), Machine Learning (ML), and Deep Learning techniques. In today's digital world, images are ubiquitous in agriculture, healthcare, transportation, environmental management, education, and wildlife monitoring.
+        </p>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7;">
+            Manually identifying and classifying vast volumes of images is labor-intensive, slow, and prone to subjective human error. Our automated deep learning system simplifies this by applying Convolutional Neural Networks (CNN), which autonomously discover spatial representations—such as edges, textures, shapes, and complex object geometries—without requiring hand-crafted features.
+        </p>
+    </div>
+
+    <!-- Section 2: Objectives -->
+    <div class="glass-card" style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.45rem; font-weight: 800; color: #38bdf8; margin-bottom: 0.85rem;">
+            2. Project Objectives
+        </h2>
+        <ul style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; margin-left: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <li><strong>Cross-Domain Flexibility:</strong> Support images from 5 heterogeneous sectors (agriculture, wildlife, transit, waste management, medicine) through a single unified web platform.</li>
+            <li><strong>Automated Feature Learning:</strong> Eliminate manual image feature engineering using hierarchical 2D convolutional filter banks and Grad-CAM attention maps.</li>
+            <li><strong>Explainable AI (XAI):</strong> Demystify neural predictions by rendering real-time Class Activation Mapping (CAM) overlays showing which spatial regions triggered classification.</li>
+            <li><strong>Production-Ready Web Architecture:</strong> Integrate deep learning model inference into an asynchronous, secure Django backend with persistent database audits.</li>
+        </ul>
+    </div>
+
+    <!-- Section 3: 5 Categories -->
+    <div class="glass-card" style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.45rem; font-weight: 800; color: #10b981; margin-bottom: 0.85rem;">
+            3. Image Classification Domains
+        </h2>
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: #10b981;">3.1 Plant &amp; Agriculture Image Classification</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+                    Identifies healthy plant foliage versus foliar infections (such as Early Blight, Late Blight, Apple Scab, and Corn Rust) to support rapid agricultural crop scouting and disease containment.
+                </p>
+            </div>
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: #3b82f6;">3.2 Animal &amp; Wildlife Classification</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+                    Distinguishes fauna species (dogs, cats, avian raptors, lions, elephants, butterflies, pandas) based on morphological features, ocular structures, and pelage patterns for biodiversity tracking.
+                </p>
+            </div>
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: #a855f7;">3.3 Vehicle &amp; Smart Mobility Classification</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+                    Categorizes multimodal transport modes (passenger sedans, buses, freight trucks, motorcycles, aircraft, and boats) for intelligent traffic management and logistics automation.
+                </p>
+            </div>
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: #f59e0b;">3.4 Waste &amp; Recyclable Materials Classification</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+                    Segregates municipal and industrial streams: recyclable polymers (PET/HDPE), paper/cardboard fiber, glass, and aluminum from biodegradable food organics and hazardous e-waste.
+                </p>
+            </div>
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: #ef4444;">3.5 Medical Image Classification &amp; Screening</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+                    Demonstrates deep learning visual pattern detection on thoracic chest radiographs, neuroimaging scans, and dermatological skin lesions for research and educational purposes.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: Architecture & Role of CNN -->
+    <div class="glass-card" style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.45rem; font-weight: 800; color: #f59e0b; margin-bottom: 0.85rem;">
+            4. Role of Convolutional Neural Networks (CNN)
+        </h2>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; margin-bottom: 1rem;">
+            CNNs possess key architectural advantages over traditional dense feedforward neural networks:
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
+            <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 8px;">
+                <h4 style="color: #fff; font-size: 0.95rem; margin-bottom: 0.3rem;">Local Receptive Fields</h4>
+                <p style="font-size: 0.82rem; color: var(--text-muted);">Neurons connect to small local regions rather than all pixels, preserving 2D spatial relationships.</p>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 8px;">
+                <h4 style="color: #fff; font-size: 0.95rem; margin-bottom: 0.3rem;">Weight Sharing</h4>
+                <p style="font-size: 0.82rem; color: var(--text-muted);">The same convolutional filter kernel is applied across the entire image, drastically reducing model parameters.</p>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 8px;">
+                <h4 style="color: #fff; font-size: 0.95rem; margin-bottom: 0.3rem;">Spatial Pooling</h4>
+                <p style="font-size: 0.82rem; color: var(--text-muted);">MaxPool downsamples spatial resolutions, granting translation invariance and computational speed.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 5: Limitations & Future Enhancements -->
+    <div class="glass-card" style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.45rem; font-weight: 800; color: #a5b4fc; margin-bottom: 0.85rem;">
+            5. Limitations &amp; Future Scope
+        </h2>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; margin-bottom: 1rem;">
+            <strong>Current Limitations:</strong> Classification accuracy correlates directly with image illumination, occlusion, sensor blur, and background clutter. Real-world images outside the distribution of the training dataset require careful thresholding and uncertainty quantification.
+        </p>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7;">
+            <strong>Future Enhancements:</strong> Upgrading from whole-image classification to bounding-box Object Detection (YOLO / Faster R-CNN), Semantic Segmentation (U-Net / Mask R-CNN), and edge inference optimization via ONNX Runtime and TensorRT.
+        </p>
+    </div>
+
+    <!-- Medical Ethical Disclaimer -->
+    <div class="disclaimer-banner">
+        <span style="font-size: 1.6rem;">⚠️</span>
+        <div>
+            <h3 style="font-size: 0.95rem; font-weight: 800; margin-bottom: 0.2rem;">Mandatory Ethical &amp; Clinical Use Policy</h3>
+            The medical imaging module in this application is strictly for educational, scientific demonstration, and pedagogical reference. It must not be deployed as an autonomous diagnostic device, and clinical decisions must always rest with licensed physicians and certified radiologists.
+        </div>
+    </div>
+</div>
+{% endblock %}

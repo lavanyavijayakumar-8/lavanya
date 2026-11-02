@@ -1,0 +1,155 @@
+{% extends 'classifier/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.4rem;">
+            Classification Audit History
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem;">
+            Review past visual predictions, confidence records, inference speeds, and Grad-CAM activations.
+        </p>
+    </div>
+
+    {% if total_count > 0 %}
+    <form action="{% url 'clear_history' %}" method="POST" onsubmit="return confirm('Are you sure you want to delete all classification records? This cannot be undone.');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger" style="font-size: 0.82rem; padding: 0.45rem 0.95rem;">
+            <span>Clear History Log 🗑️</span>
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Search & Domain Filter Form -->
+<div class="glass-card" style="padding: 1.15rem; margin-bottom: 2rem;">
+    <form action="{% url 'history' %}" method="GET" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 220px;">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search by predicted label (e.g. Tomato, Lion, Plastic)..." style="width: 100%; padding: 0.6rem 0.9rem; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff; font-size: 0.85rem;">
+        </div>
+
+        <div style="min-width: 180px;">
+            <select name="domain" style="width: 100%; padding: 0.6rem 0.9rem; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff; font-size: 0.85rem;" onchange="this.form.submit();">
+                <option value="all" {% if domain_filter == 'all' %}selected{% endif %}>All Domains</option>
+                {% for dom_id, dom in domains.items %}
+                <option value="{{ dom_id }}" {% if domain_filter == dom_id %}selected{% endif %}>{{ dom.icon }} {{ dom.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="font-size: 0.85rem; padding: 0.6rem 1.2rem;">
+            Filter
+        </button>
+        {% if query or domain_filter != 'all' %}
+        <a href="{% url 'history' %}" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.6rem 1rem;">
+            Reset
+        </a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Records Table -->
+{% if page_obj %}
+<div class="data-table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Thumbnail</th>
+                <th>Domain</th>
+                <th>Predicted Classification</th>
+                <th>Confidence</th>
+                <th>Latency</th>
+                <th>Timestamp</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in page_obj %}
+            <tr>
+                <td style="width: 70px;">
+                    <a href="{% url 'record_detail' item.id %}">
+                        <img src="{{ item.image.url }}" alt="{{ item.predicted_label }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-subtle);">
+                    </a>
+                </td>
+                <td>
+                    <span class="cat-badge" style="background: {% if item.domain == 'plants' %}var(--color-plants-bg); color: var(--color-plants);{% elif item.domain == 'animals' %}var(--color-animals-bg); color: var(--color-animals);{% elif item.domain == 'vehicles' %}var(--color-vehicles-bg); color: var(--color-vehicles);{% elif item.domain == 'waste' %}var(--color-waste-bg); color: var(--color-waste);{% else %}var(--color-medical-bg); color: var(--color-medical);{% endif %};">
+                        {{ item.domain|upper }}
+                    </span>
+                </td>
+                <td>
+                    <a href="{% url 'record_detail' item.id %}" style="font-weight: 700; color: #fff;">
+                        {{ item.predicted_label }}
+                    </a>
+                    {% if item.notes %}
+                    <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.2rem;">
+                        Note: {{ item.notes|truncatechars:35 }}
+                    </div>
+                    {% endif %}
+                </td>
+                <td>
+                    <strong style="color: {% if item.confidence > 90 %}#10b981{% elif item.confidence > 75 %}#38bdf8{% else %}#f59e0b{% endif %};">
+                        {{ item.confidence }}%
+                    </strong>
+                </td>
+                <td>
+                    <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">
+                        {{ item.inference_time_ms }} ms
+                    </span>
+                </td>
+                <td style="font-size: 0.78rem; color: var(--text-muted);">
+                    {{ item.created_at|date:"M d, Y • H:i" }}
+                </td>
+                <td>
+                    <div style="display: flex; gap: 0.45rem;">
+                        <a href="{% url 'record_detail' item.id %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.7rem;">
+                            View Report
+                        </a>
+                        <form action="{% url 'delete_record' item.id %}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this scan record?');">
+                            {% csrf_token %}
+                            <button type="submit" style="background: none; border: none; color: #ef4444; font-size: 0.9rem; cursor: pointer; padding: 0.35rem 0.5rem;" title="Delete">
+                                &times;
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination Links -->
+{% if page_obj.has_other_pages %}
+<div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 2rem;">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if domain_filter %}&domain={{ domain_filter }}{% endif %}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
+        &laquo; Previous
+    </a>
+    {% endif %}
+
+    <span style="display: inline-flex; align-items: center; padding: 0 1rem; font-size: 0.82rem; color: var(--text-muted);">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if domain_filter %}&domain={{ domain_filter }}{% endif %}" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
+        Next &raquo;
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="glass-card" style="text-align: center; padding: 3.5rem 1.5rem;">
+    <div style="font-size: 2.8rem; margin-bottom: 0.8rem; opacity: 0.7;">📋</div>
+    <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.4rem;">No Classification Records Found</h3>
+    <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.5rem;">
+        {% if query or domain_filter != 'all' %}No records matched your search filter.{% else %}You have not recorded any classifications yet.{% endif %}
+    </p>
+    <a href="{% url 'classify' %}" class="btn btn-primary">
+        Launch First Image Scan ⚡
+    </a>
+</div>
+{% endif %}
+{% endblock %}

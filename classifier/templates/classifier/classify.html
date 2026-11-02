@@ -1,0 +1,269 @@
+{% extends 'classifier/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.4rem;">
+        Image Classification Studio
+    </h1>
+    <p style="color: var(--text-secondary); font-size: 0.95rem;">
+        Upload an image or take a snapshot. Our Convolutional Neural Network extracts hierarchical visual features to identify categories across Plants, Animals, Vehicles, Waste Materials, and Medical Imaging.
+    </p>
+</div>
+
+<div class="studio-layout">
+    <!-- LEFT PANEL: Image Upload & Mode Controls -->
+    <div>
+        <div class="glass-card" style="margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;">
+                <span>1. Select Classification Scope</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">Auto-detect or Target Domain</span>
+            </h2>
+
+            <div class="domain-selector-bar">
+                <button type="button" class="domain-pill {% if selected_domain == 'auto' or not selected_domain %}active{% endif %}" data-domain="auto">
+                    <span>✨</span>
+                    <span>Auto-Detect Universal</span>
+                </button>
+                {% for dom_id, dom in domains.items %}
+                <button type="button" class="domain-pill {% if selected_domain == dom_id %}active{% endif %}" data-domain="{{ dom_id }}">
+                    <span>{{ dom.icon }}</span>
+                    <span>{{ dom.name|truncatechars:20 }}</span>
+                </button>
+                {% endfor %}
+            </div>
+
+            <!-- Upload / Camera Form -->
+            <form action="{% url 'classify' %}" method="POST" enctype="multipart/form-data" id="classificationForm">
+                {% csrf_token %}
+                <input type="hidden" name="domain" id="targetDomainInput" value="{{ selected_domain|default:'auto' }}">
+                <input type="hidden" name="camera_data" id="cameraDataInput" value="">
+                <input type="file" name="image" id="imageInput" class="hidden-input" accept="image/*">
+
+                <div class="dropzone" id="dropzone">
+                    <div id="dropzoneContent">
+                        <div class="dropzone-icon">📷</div>
+                        <div class="dropzone-title">Click to upload or drag &amp; drop</div>
+                        <div class="dropzone-hint">PNG, JPG, WEBP formats up to 15MB</div>
+                        
+                        <div style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 1rem;">
+                            <button type="button" class="btn btn-secondary" onclick="event.stopPropagation(); document.getElementById('imageInput').click();">
+                                <span>Browse File</span>
+                            </button>
+                            <button type="button" class="btn btn-secondary camera-btn" id="openCameraBtn" style="border-color: rgba(99, 102, 241, 0.4);">
+                                <span>Take Photo 📸</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Selected Image Preview -->
+                    <div id="previewContainer" style="display: none; position: relative;">
+                        <img id="imagePreview" src="" alt="Selected Image Preview" style="max-height: 280px; width: auto; margin: 0 auto; border-radius: 8px;">
+                        <div style="margin-top: 0.85rem; display: flex; gap: 0.5rem; justify-content: center;">
+                            <button type="button" class="btn btn-secondary clear-btn" onclick="location.reload();" style="font-size: 0.75rem; padding: 0.35rem 0.85rem;">
+                                Clear / Change
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.25rem;">
+                    <label for="id_notes" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
+                        Optional Notes / Inspection Reference
+                    </label>
+                    <input type="text" name="notes" id="id_notes" placeholder="e.g. Field trial batch #4, Greenhouse plot B, Clinic screening sample" style="width: 100%; padding: 0.65rem 0.95rem; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: #fff; font-size: 0.85rem;">
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary" id="submitBtn" style="width: 100%; font-size: 1rem; padding: 0.85rem;" disabled>
+                        <span>Run CNN Classification Analysis</span>
+                        <span aria-hidden="true">⚡</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Quick-Test Samples Accordion -->
+        <div class="glass-card">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.45rem;">
+                <span>🧪</span>
+                <span>Or Test Instantly with Demo Samples</span>
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.75rem;">
+                {% for sample in samples %}
+                <a href="{% url 'classify' %}?sample_id={{ sample.id }}" style="display: block; border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); transition: transform 0.15s ease;" onmouseover="this.style.transform='scale(1.03)';" onmouseout="this.style.transform='scale(1)';">
+                    <img src="{{ sample.image.url }}" alt="{{ sample.title }}" style="height: 80px; width: 100%; object-fit: cover;">
+                    <div style="padding: 0.4rem 0.5rem; font-size: 0.72rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        {{ sample.title }}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL: Classification Results & Grad-CAM Heatmap -->
+    <div>
+        {% if record and result_data %}
+        <div class="result-box" id="classificationReport">
+            <!-- Header with Category and Confidence Score -->
+            <div class="result-header">
+                <div>
+                    <div class="result-domain-badge" style="background: {{ result_data.domain_color }}22; color: {{ result_data.domain_color }}; border: 1px solid {{ result_data.domain_color }}66;">
+                        <span>{{ result_data.domain_icon }}</span>
+                        <span>{{ result_data.domain_name }}</span>
+                    </div>
+                    <h2 class="predicted-title">{{ result_data.predicted_class }}</h2>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                        Inference Speed: <strong style="color: #38bdf8;">{{ result_data.inference_time_ms }} ms</strong> • Model: MultiCategoryCNN 5-Tier
+                    </div>
+                </div>
+
+                <div class="confidence-meter">
+                    <div class="conf-value" style="color: {% if result_data.confidence > 90 %}#10b981{% elif result_data.confidence > 75 %}#38bdf8{% else %}#f59e0b{% endif %};">
+                        {{ result_data.confidence }}%
+                    </div>
+                    <div class="conf-label">Confidence Score</div>
+                </div>
+            </div>
+
+            <!-- Image Viewer with Grad-CAM Toggle -->
+            <div class="image-viewer-card" style="margin-bottom: 1.25rem;">
+                <img id="displayOriginal" src="{{ record.image.url }}" alt="Uploaded Image">
+                {% if record.heatmap_image %}
+                <img id="displayHeatmap" src="{{ record.heatmap_image.url }}" alt="Grad-CAM Activation Heatmap" style="display: none;">
+                {% endif %}
+
+                <div class="viewer-toggle-bar">
+                    <div style="font-size: 0.76rem; color: var(--text-muted);">
+                        <span>View Mode:</span>
+                    </div>
+                    <div class="toggle-group">
+                        <button type="button" class="toggle-btn viewer-toggle-btn active" data-view="original">Original Image</button>
+                        {% if record.heatmap_image %}
+                        <button type="button" class="toggle-btn viewer-toggle-btn" data-view="heatmap">Grad-CAM Heatmap 🔥</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top 5 Probability Breakdown Chart -->
+            <div class="prob-section-title">Class Probability Distribution (Top-5 Ranked)</div>
+            <div>
+                {% for pred in result_data.top_predictions %}
+                <div class="prob-item">
+                    <div class="prob-meta">
+                        <span class="prob-name">
+                            <span>{{ pred.domain_icon }}</span>
+                            <span>{{ pred.class_name }}</span>
+                        </span>
+                        <span style="color: {% if forloop.first %}#10b981{% else %}var(--text-muted){% endif %};">{{ pred.confidence }}%</span>
+                    </div>
+                    <div class="prob-bar-track">
+                        <div class="prob-bar-fill" style="width: {{ pred.confidence }}%; background: {% if forloop.first %}linear-gradient(90deg, #10b981, #34d399){% else %}linear-gradient(90deg, #6366f1, #38bdf8){% endif %};"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- AI Insights & Domain Knowledge -->
+            {% if result_data.details %}
+            <div class="insights-card" style="border-left-color: {{ result_data.domain_color }};">
+                <div class="insights-title">
+                    <span>💡</span>
+                    <span>Domain Guidance &amp; Insights</span>
+                </div>
+                
+                {% if result_data.details.status %}
+                <div class="insight-row">
+                    <span class="insight-label">Classification Status:</span>
+                    <span class="insight-value">{{ result_data.details.status }}</span>
+                </div>
+                {% endif %}
+
+                {% if result_data.details.pathogen %}
+                <div class="insight-row">
+                    <span class="insight-label">Identified Pathogen:</span>
+                    <span class="insight-value"><em>{{ result_data.details.pathogen }}</em></span>
+                </div>
+                {% endif %}
+
+                {% if result_data.details.symptoms %}
+                <div class="insight-row">
+                    <span class="insight-label">Visual Characteristics:</span>
+                    <span class="insight-value">{{ result_data.details.symptoms }}</span>
+                </div>
+                {% endif %}
+
+                {% if result_data.details.recommendation %}
+                <div class="insight-row" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.06);">
+                    <span class="insight-label">Actionable Recommendation:</span>
+                    <p style="color: #cbd5e1; margin-top: 0.2rem; font-size: 0.85rem;">{{ result_data.details.recommendation }}</p>
+                </div>
+                {% endif %}
+
+                {% if result_data.details.eco_note %}
+                <div class="insight-row" style="margin-top: 0.4rem;">
+                    <span class="insight-label">Ecological / System Impact:</span>
+                    <span class="insight-value">{{ result_data.details.eco_note }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Medical Disclaimer Banner (if medical domain) -->
+            {% if result_data.predicted_domain == 'medical' or result_data.disclaimer %}
+            <div class="disclaimer-banner">
+                <span style="font-size: 1.3rem;">⚠️</span>
+                <div>
+                    <strong>Mandatory Research &amp; Educational Notice:</strong><br>
+                    {{ result_data.disclaimer|default:"This deep learning classification is generated for academic and research demonstration purposes only. It is not certified for clinical diagnostic use and must not replace professional clinical evaluation." }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Action Toolbar (Print / New Scan / View History) -->
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary" onclick="window.print();">
+                    <span>Print / Save PDF Report</span>
+                    <span aria-hidden="true">🖨️</span>
+                </button>
+                <a href="{% url 'classify' %}" class="btn btn-primary" style="margin-left: auto;">
+                    <span>Classify Another Image</span>
+                    <span aria-hidden="true">➕</span>
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <!-- Standby / Instructions Card -->
+        <div class="glass-card" style="text-align: center; padding: 4.5rem 2rem;">
+            <div style="font-size: 3.5rem; margin-bottom: 1rem; opacity: 0.75;">🔬</div>
+            <h2 style="font-size: 1.45rem; font-weight: 700; margin-bottom: 0.6rem;">
+                Classification Output Ready
+            </h2>
+            <p style="color: var(--text-secondary); max-width: 440px; margin: 0 auto 1.8rem; font-size: 0.9rem;">
+                Upload an image or choose one of the preloaded demo samples on the left to trigger the Convolutional Neural Network and display class predictions with Grad-CAM feature attention overlays.
+            </p>
+            <div style="display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.04); border-radius: var(--radius-full); font-size: 0.8rem; color: var(--text-muted);">
+                <span>🌱 Agriculture</span> • <span>🦁 Wildlife</span> • <span>🚗 Vehicles</span> • <span>♻️ Recyclables</span> • <span>🩻 Medical</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Web Camera Capture Modal -->
+<div class="modal-overlay" id="cameraModal">
+    <div class="modal-content">
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+            <span>Camera Live Snapshot</span>
+            <button type="button" id="closeCameraBtn" style="background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer;">&times;</button>
+        </h3>
+        <video id="cameraVideo" class="video-preview" autoplay playsinline></video>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('closeCameraBtn').click();">Cancel</button>
+            <button type="button" class="btn btn-primary" id="capturePhotoBtn">Capture Snapshot 📸</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends 'classifier/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem;">
+        <div class="hero-pill">
+            <span class="pulse-dot"></span>
+            <span>Developer Reference</span>
+        </div>
+        <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.4rem;">
+            RESTful Classification API
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem;">
+            Integrate our multi-domain CNN classification engine directly into your IoT edge devices, mobile apps, agricultural sensors, or laboratory systems via standard HTTP POST.
+        </p>
+    </div>
+
+    <!-- Endpoint Overview Card -->
+    <div class="glass-card" style="margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; gap: 0.85rem; margin-bottom: 1rem;">
+            <span style="background: #10b981; color: #fff; font-weight: 800; font-family: var(--font-mono); font-size: 0.82rem; padding: 0.3rem 0.65rem; border-radius: 6px;">POST</span>
+            <code style="font-size: 1.1rem; color: #fff; font-weight: 600;">/api/classify/</code>
+        </div>
+        <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+            Submits an image for automated Convolutional Neural Network inference, returning class predictions, confidence percentages, latency benchmarks, and Grad-CAM heatmap URLs.
+        </p>
+
+        <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Accepted Parameters</h3>
+        <div class="data-table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>image</code></td>
+                        <td>File (Multipart)</td>
+                        <td>Conditional</td>
+                        <td>Image file stream (JPEG, PNG, WebP)</td>
+                    </tr>
+                    <tr>
+                        <td><code>image_base64</code></td>
+                        <td>String (JSON)</td>
+                        <td>Conditional</td>
+                        <td>Base64-encoded image string</td>
+                    </tr>
+                    <tr>
+                        <td><code>sample_id</code></td>
+                        <td>Integer</td>
+                        <td>Conditional</td>
+                        <td>ID of preloaded demo sample image</td>
+                    </tr>
+                    <tr>
+                        <td><code>domain</code></td>
+                        <td>String</td>
+                        <td>Optional</td>
+                        <td>Target scope: <code>auto</code>, <code>plants</code>, <code>animals</code>, <code>vehicles</code>, <code>waste</code>, <code>medical</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Code Examples -->
+    <div class="glass-card" style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1.2rem;">Integration Code Snippets</h2>
+
+        <!-- cURL -->
+        <div style="margin-bottom: 1.5rem;">
+            <div style="font-size: 0.82rem; font-weight: 700; color: #a5b4fc; text-transform: uppercase; margin-bottom: 0.3rem;">cURL (Command Line)</div>
+            <pre class="code-box">curl -X POST http://127.0.0.1:8000/api/classify/ \
+  -F "image=@sample_leaf.jpg" \
+  -F "domain=plants"</pre>
+        </div>
+
+        <!-- Python -->
+        <div style="margin-bottom: 1.5rem;">
+            <div style="font-size: 0.82rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 0.3rem;">Python (requests)</div>
+            <pre class="code-box">import requests
+
+url = "http://127.0.0.1:8000/api/classify/"
+files = {"image": open("sample_xray.jpg", "rb")}
+data = {"domain": "medical"}
+
+response = requests.post(url, files=files, data=data)
+result = response.json()
+print("Prediction:", result["prediction"]["class_name"])
+print("Confidence:", result["prediction"]["confidence_percentage"], "%")</pre>
+        </div>
+
+        <!-- JavaScript Fetch -->
+        <div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: #f59e0b; text-transform: uppercase; margin-bottom: 0.3rem;">JavaScript (Fetch API)</div>
+            <pre class="code-box">const formData = new FormData();
+formData.append('image', fileInput.files[0]);
+formData.append('domain', 'auto');
+
+const res = await fetch('/api/classify/', {
+  method: 'POST',
+  body: formData
+});
+const data = await res.json();
+console.log(data);</pre>
+        </div>
+    </div>
+
+    <!-- Sample JSON Response -->
+    <div class="glass-card">
+        <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.85rem;">Standard JSON Response</h2>
+        <pre class="code-box" style="color: #4ade80;">{
+  "status": "success",
+  "record_id": 42,
+  "prediction": {
+    "class_name": "Tomato Early Blight",
+    "domain_id": "plants",
+    "domain_name": "Plant & Leaf Analysis",
+    "confidence_percentage": 98.69,
+    "inference_time_ms": 32.4
+  },
+  "top_predictions": [
+    {
+      "class_name": "Tomato Early Blight",
+      "domain_id": "plants",
+      "confidence": 98.69
+    },
+    {
+      "class_name": "Potato Late Blight",
+      "domain_id": "plants",
+      "confidence": 0.85
+    }
+  ],
+  "domain_metadata": {
+    "status": "Pathogenic Foliar Disease",
+    "pathogen": "Alternaria solani",
+    "recommendation": "Remove infected foliage; apply copper bio-fungicide."
+  },
+  "image_urls": {
+    "original": "http://127.0.0.1:8000/media/uploads/2026/10/21/scan.jpg",
+    "heatmap": "http://127.0.0.1:8000/media/heatmaps/2026/10/21/scan_cam.jpg"
+  }
+}</pre>
+    </div>
+</div>
+{% endblock %}

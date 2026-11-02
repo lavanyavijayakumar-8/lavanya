@@ -1,0 +1,224 @@
+{% extends 'classifier/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <div class="hero-pill" style="margin-bottom: 0.8rem;">
+        <span class="pulse-dot"></span>
+        <span>Deep Learning Architecture Visualizer</span>
+    </div>
+    <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.4rem;">
+        Convolutional Neural Network Architecture
+    </h1>
+    <p style="color: var(--text-secondary); font-size: 0.95rem; max-width: 820px;">
+        A detailed layer-by-layer breakdown of how our custom 5-tier CNN processes raw input pixels into hierarchical visual features (edges, textures, object parts, semantic identities) to classify across 5 domains.
+    </p>
+</div>
+
+<!-- Horizontal Scrollable Pipeline Diagram -->
+<div class="glass-card" style="margin-bottom: 2.5rem; overflow: hidden;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="font-size: 1.15rem; font-weight: 700;">End-to-End Layer Transformation Pipeline</h2>
+        <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">Scroll horizontally &rarr;</span>
+    </div>
+
+    <div class="cnn-flow-container">
+        <!-- Node 0: Input -->
+        <div class="cnn-node">
+            <span class="cnn-node-badge">INPUT</span>
+            <div class="cnn-node-title">RGB Image</div>
+            <div class="cnn-node-dim">3 &times; 224 &times; 224</div>
+            <p class="cnn-node-desc">
+                Normalized RGB pixel tensors scaled to ImageNet standard deviations.
+            </p>
+        </div>
+
+        <!-- Node 1: ConvBlock 1 -->
+        <div class="cnn-node">
+            <span class="cnn-node-badge">BLOCK 1</span>
+            <div class="cnn-node-title">Low-Level Edges</div>
+            <div class="cnn-node-dim">32 &times; 112 &times; 112</div>
+            <p class="cnn-node-desc">
+                Conv2D (3&times;3), BatchNorm, LeakyReLU, MaxPool (2&times;2). Extracts sharp directional gradients.
+            </p>
+        </div>
+
+        <!-- Node 2: ConvBlock 2 -->
+        <div class="cnn-node">
+            <span class="cnn-node-badge">BLOCK 2</span>
+            <div class="cnn-node-title">Textures &amp; Curves</div>
+            <div class="cnn-node-dim">64 &times; 56 &times; 56</div>
+            <p class="cnn-node-desc">
+                Detects circular lesion spots, leaf venation, vehicle contours, and rib curvature.
+            </p>
+        </div>
+
+        <!-- Node 3: ConvBlock 3 -->
+        <div class="cnn-node">
+            <span class="cnn-node-badge">BLOCK 3</span>
+            <div class="cnn-node-title">Object Parts</div>
+            <div class="cnn-node-dim">128 &times; 28 &times; 28</div>
+            <p class="cnn-node-desc">
+                Assembles mid-level features: wheels, animal eyes, bottle necks, and pulmonary boundaries.
+            </p>
+        </div>
+
+        <!-- Node 4: ConvBlock 4 -->
+        <div class="cnn-node">
+            <span class="cnn-node-badge">BLOCK 4</span>
+            <div class="cnn-node-title">Semantic Motifs</div>
+            <div class="cnn-node-dim">256 &times; 14 &times; 14</div>
+            <p class="cnn-node-desc">
+                Captures high-level category archetypes and spatial compositions.
+            </p>
+        </div>
+
+        <!-- Node 5: ConvBlock 5 (Grad-CAM Target) -->
+        <div class="cnn-node" style="border-color: #6366f1;">
+            <span class="cnn-node-badge" style="background: rgba(99, 102, 241, 0.3); color: #fff;">GRAD-CAM TARGET</span>
+            <div class="cnn-node-title">Deep Feature Map</div>
+            <div class="cnn-node-dim">512 &times; 14 &times; 14</div>
+            <p class="cnn-node-desc">
+                Gradients backpropagate here to compute visual attention heatmaps.
+            </p>
+        </div>
+
+        <!-- Node 6: Global Pooling -->
+        <div class="cnn-node">
+            <span class="cnn-node-badge">POOLING</span>
+            <div class="cnn-node-title">AdaptiveAvgPool</div>
+            <div class="cnn-node-dim">512 &times; 1 &times; 1</div>
+            <p class="cnn-node-desc">
+                Compresses 2D spatial dimensions into compact 512-D feature vector.
+            </p>
+        </div>
+
+        <!-- Node 7: Dense Classifier -->
+        <div class="cnn-node">
+            <span class="cnn-node-badge">DENSE HEAD</span>
+            <div class="cnn-node-title">FC Classification</div>
+            <div class="cnn-node-dim">512 &rarr; 256 &rarr; {{ total_classes }}</div>
+            <p class="cnn-node-desc">
+                Linear projection with Dropout (0.25) to prevent overfitting.
+            </p>
+        </div>
+
+        <!-- Node 8: Output Softmax -->
+        <div class="cnn-node" style="border-color: #10b981;">
+            <span class="cnn-node-badge" style="background: rgba(16, 185, 129, 0.3); color: #fff;">OUTPUT</span>
+            <div class="cnn-node-title">Softmax Probs</div>
+            <div class="cnn-node-dim">{{ total_classes }} Classes</div>
+            <p class="cnn-node-desc">
+                Normalized probability distribution across all 5 category domains.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="studio-layout">
+    <!-- Mathematical & Engineering Foundation -->
+    <div class="glass-card">
+        <h2 style="font-size: 1.3rem; font-weight: 800; margin-bottom: 1.25rem;">
+            Mathematical Mechanics of CNNs
+        </h2>
+
+        <div style="margin-bottom: 1.5rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: #a5b4fc; margin-bottom: 0.3rem;">
+                1. 2D Spatial Discrete Cross-Correlation
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem;">
+                Convolution applies learnable parameter kernels $K \in \mathbb{R}^{k \times k}$ across input feature maps $X$:
+            </p>
+            <div class="code-box">
+                S(i, j) = (X * K)(i, j) = &sum;<sub>m</sub> &sum;<sub>n</sub> X(i + m, j + n) &sdot; K(m, n) + b
+            </div>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: #38bdf8; margin-bottom: 0.3rem;">
+                2. Softmax Probability Normalization
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem;">
+                Converts raw real-valued logit scores $z_i$ into a valid categorical probability distribution:
+            </p>
+            <div class="code-box">
+                P(y = c | X) = exp(z<sub>c</sub>) / &sum;<sub>j=1</sub><sup>C</sup> exp(z<sub>j</sub>)
+            </div>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: #f59e0b; margin-bottom: 0.3rem;">
+                3. Grad-CAM (Gradient-Weighted Class Activation Mapping)
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem;">
+                Computes the gradient of score $y^c$ with respect to activation map $A^k$ of the final conv layer:
+            </p>
+            <div class="code-box">
+                &alpha;<sub>k</sub><sup>c</sup> = (1/Z) &sum;<sub>i</sub> &sum;<sub>j</sub> (&part;y<sup>c</sup> / &part;A<sub>i,j</sub><sup>k</sup>)<br>
+                L<sub>Grad-CAM</sub><sup>c</sup> = ReLU( &sum;<sub>k</sub> &alpha;<sub>k</sub><sup>c</sup> A<sup>k</sup> )
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Layer Dimension Calculator -->
+    <div class="glass-card">
+        <h2 style="font-size: 1.3rem; font-weight: 800; margin-bottom: 0.6rem;">
+            Interactive CNN Layer Calculator
+        </h2>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+            Test the spatial output dimension formula: $O = \lfloor \frac{W - K + 2P}{S} \rfloor + 1$
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">Input Size (W):</label>
+                <input type="number" id="calcW" value="224" style="width: 100%; padding: 0.55rem; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff;" oninput="computeConvDim();">
+            </div>
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">Kernel Size (K):</label>
+                <input type="number" id="calcK" value="3" style="width: 100%; padding: 0.55rem; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff;" oninput="computeConvDim();">
+            </div>
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">Padding (P):</label>
+                <input type="number" id="calcP" value="1" style="width: 100%; padding: 0.55rem; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff;" oninput="computeConvDim();">
+            </div>
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">Stride (S):</label>
+                <input type="number" id="calcS" value="1" style="width: 100%; padding: 0.55rem; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff;" oninput="computeConvDim();">
+            </div>
+        </div>
+
+        <div style="background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: var(--radius-md); padding: 1.25rem; text-align: center;">
+            <div style="font-size: 0.75rem; color: #c7d2fe; text-transform: uppercase; font-weight: 700; margin-bottom: 0.3rem;">Calculated Output Feature Map Size:</div>
+            <div id="calcOutput" style="font-size: 2.2rem; font-weight: 800; color: #fff; font-family: var(--font-mono);">
+                224 &times; 224
+            </div>
+            <div id="calcExplanation" style="font-size: 0.78rem; color: #a5b4fc; margin-top: 0.4rem;">
+                Formula: &lfloor;(224 - 3 + 2(1)) / 1&rfloor; + 1 = 224
+            </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; text-align: center;">
+            <a href="{% url 'classify' %}" class="btn btn-primary" style="width: 100%;">
+                <span>Test Live CNN Inference Studio</span>
+                <span aria-hidden="true">&rarr;</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function computeConvDim() {
+    const W = parseInt(document.getElementById('calcW').value) || 224;
+    const K = parseInt(document.getElementById('calcK').value) || 3;
+    const P = parseInt(document.getElementById('calcP').value) || 0;
+    const S = parseInt(document.getElementById('calcS').value) || 1;
+    
+    const out = Math.floor((W - K + 2 * P) / S) + 1;
+    document.getElementById('calcOutput').innerHTML = `${out} &times; ${out}`;
+    document.getElementById('calcExplanation').innerHTML = `Formula: &lfloor;(${W} - ${K} + 2(${P})) / ${S}&rfloor; + 1 = ${out}`;
+}
+</script>
+{% endblock %}

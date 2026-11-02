@@ -1,0 +1,137 @@
+{% extends 'classifier/base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <a href="{% url 'history' %}" style="font-size: 0.85rem; color: var(--text-muted); display: inline-flex; align-items: center; gap: 0.35rem; margin-bottom: 0.4rem;">
+            &larr; Back to History
+        </a>
+        <h1 style="font-size: 2rem; font-weight: 800;">
+            Classification Report #{{ record.id }}
+        </h1>
+        <div style="font-size: 0.82rem; color: var(--text-muted);">
+            Recorded on {{ record.created_at|date:"M d, Y • H:i:s" }} UTC
+        </div>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <button type="button" class="btn btn-secondary" onclick="window.print();">
+            <span>Print Report</span>
+            <span aria-hidden="true">🖨️</span>
+        </button>
+        <a href="{% url 'classify' %}" class="btn btn-primary">
+            <span>New Classification</span>
+            <span aria-hidden="true">⚡</span>
+        </a>
+    </div>
+</div>
+
+<div class="studio-layout">
+    <!-- Image & CAM Heatmap View -->
+    <div>
+        <div class="image-viewer-card" style="margin-bottom: 1.25rem;">
+            <img id="displayOriginal" src="{{ record.image.url }}" alt="{{ record.predicted_label }}">
+            {% if record.heatmap_image %}
+            <img id="displayHeatmap" src="{{ record.heatmap_image.url }}" alt="Grad-CAM Activation Heatmap" style="display: none;">
+            {% endif %}
+
+            <div class="viewer-toggle-bar">
+                <div style="font-size: 0.76rem; color: var(--text-muted);">
+                    <span>Filename: {{ record.filename }}</span>
+                </div>
+                <div class="toggle-group">
+                    <button type="button" class="toggle-btn viewer-toggle-btn active" data-view="original">Original Image</button>
+                    {% if record.heatmap_image %}
+                    <button type="button" class="toggle-btn viewer-toggle-btn" data-view="heatmap">Grad-CAM Heatmap 🔥</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if record.notes %}
+        <div class="glass-card" style="padding: 1.25rem;">
+            <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">Inspector Notes</h3>
+            <p style="font-size: 0.9rem; color: #cbd5e1;">{{ record.notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Metadata & Insights -->
+    <div>
+        <div class="result-box">
+            <div class="result-header">
+                <div>
+                    <div class="result-domain-badge" style="background: {{ domain_info.color }}22; color: {{ domain_info.color }}; border: 1px solid {{ domain_info.color }}66;">
+                        <span>{{ domain_info.icon }}</span>
+                        <span>{{ domain_info.name }}</span>
+                    </div>
+                    <h2 class="predicted-title">{{ record.predicted_label }}</h2>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                        Inference Time: <strong style="color: #38bdf8;">{{ record.inference_time_ms }} ms</strong>
+                    </div>
+                </div>
+
+                <div class="confidence-meter">
+                    <div class="conf-value" style="color: #10b981;">{{ record.confidence }}%</div>
+                    <div class="conf-label">Confidence Score</div>
+                </div>
+            </div>
+
+            <!-- Top 5 Predictions -->
+            <div class="prob-section-title">Ranked Class Distribution</div>
+            <div>
+                {% for pred in record.top_predictions %}
+                <div class="prob-item">
+                    <div class="prob-meta">
+                        <span class="prob-name">{{ pred.domain_icon }} {{ pred.class_name }}</span>
+                        <span style="color: {% if forloop.first %}#10b981{% else %}var(--text-muted){% endif %};">{{ pred.confidence }}%</span>
+                    </div>
+                    <div class="prob-bar-track">
+                        <div class="prob-bar-fill" style="width: {{ pred.confidence }}%; background: {% if forloop.first %}linear-gradient(90deg, #10b981, #34d399){% else %}linear-gradient(90deg, #6366f1, #38bdf8){% endif %};"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Insights Card -->
+            {% if class_details %}
+            <div class="insights-card" style="border-left-color: {{ domain_info.color }};">
+                <div class="insights-title">
+                    <span>💡</span>
+                    <span>Domain Insights &amp; Clinical/Eco Guidance</span>
+                </div>
+                {% if class_details.status %}
+                <div class="insight-row">
+                    <span class="insight-label">Domain Status:</span>
+                    <span class="insight-value">{{ class_details.status }}</span>
+                </div>
+                {% endif %}
+                {% if class_details.symptoms %}
+                <div class="insight-row">
+                    <span class="insight-label">Visual Characteristics:</span>
+                    <span class="insight-value">{{ class_details.symptoms }}</span>
+                </div>
+                {% endif %}
+                {% if class_details.recommendation %}
+                <div class="insight-row" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.06);">
+                    <span class="insight-label">Action Guidance:</span>
+                    <p style="color: #cbd5e1; margin-top: 0.2rem; font-size: 0.85rem;">{{ class_details.recommendation }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Medical Disclaimer -->
+            {% if record.domain == 'medical' or domain_info.disclaimer %}
+            <div class="disclaimer-banner">
+                <span style="font-size: 1.3rem;">⚠️</span>
+                <div>
+                    <strong>Mandatory Research Notice:</strong><br>
+                    {{ domain_info.disclaimer|default:"Educational demonstration only. Not for clinical diagnosis." }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
